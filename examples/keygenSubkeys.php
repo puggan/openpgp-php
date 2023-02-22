@@ -94,7 +94,16 @@ $packets[] = $sub_sig;
 $m = new OpenPGP_Message($packets);
 
 // Serialize the private key
-print $m->to_bytes();
+$bytes = $m->to_bytes();
+
+echo \OpenPGP::enarmor(
+    $bytes,
+    'PGP PRIVATE KEY BLOCK',
+    [
+        'Version' => 'OpenPgp-php v' . implode('.', \OpenPGP::VERSION)
+    ]
+);
+
 
 // Clone a public key message from the secret key
 $pubm = clone($m);
@@ -111,6 +120,15 @@ foreach($pubm as $idx => $p) {
 
 // Serialize the public key
 $public_bytes = $pubm->to_bytes();
+
+echo \OpenPGP::enarmor(
+    $public_bytes,
+    'PGP PUBLIC KEY BLOCK',
+    [
+        'Version' => 'OpenPgp-php v' . implode('.', \OpenPGP::VERSION)
+    ]
+);
+
 
 // Note: If using PHP 7.4 CLI, disable deprecated warnings:
 // php -d error_reporting="E_ALL & ~E_DEPRECATED" examples/keygenSubkeys.php > mykey.gpg

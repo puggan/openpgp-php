@@ -29,4 +29,12 @@ $m = $wkey->sign_key_userid(array($nkey, $uid));
 $m[0] = OpenPGP_Crypt_Symmetric::encryptSecretKey("password", $nkey);
 
 // Serialize encrypted private key
-print $m->to_bytes();
+$bytes = $m->to_bytes();
+
+echo \OpenPGP::enarmor(
+    $bytes,
+    'PGP PRIVATE KEY BLOCK',
+    [
+        'Version' => 'OpenPgp-php v' . implode('.', \OpenPGP::VERSION)
+    ]
+);
