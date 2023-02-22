@@ -211,9 +211,12 @@ class OpenPGP_S2K {
  * @see http://tools.ietf.org/html/rfc4880#section-4.1
  * @see http://tools.ietf.org/html/rfc4880#section-11
  * @see http://tools.ietf.org/html/rfc4880#section-11.3
+ * @implements ArrayAccess<int, OpenPGP_Packet>
+ * @implements IteratorAggregate<int, OpenPGP_Packet>
  */
 class OpenPGP_Message implements IteratorAggregate, ArrayAccess {
   public $uri = NULL;
+  /** @var array<int, OpenPGP_Packet>  */
   public $packets = array();
 
   static function parse_file($path) {

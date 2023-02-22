@@ -134,8 +134,11 @@ class OpenPGP_Crypt_RSA {
     return new OpenPGP_Message(array($sig, $message));
   }
 
-  /** Pass a message with a key and userid packet to sign */
-  // TODO: merge this with the normal sign function
+  /**
+   * Pass a message with a key and userid packet to sign
+   * @param OpenPGP_Message|array<int,OpenPGP_Packet>|resource|string $packet
+   * TODO: merge this with the normal sign function
+   */
   function sign_key_userid($packet, $hash='SHA256', $keyid=NULL) {
     if(is_array($packet)) {
       $packet = new OpenPGP_Message($packet);
@@ -144,6 +147,7 @@ class OpenPGP_Crypt_RSA {
     }
 
     $key = $this->private_key($keyid);
+    /** @var ?OpenPGP_Message $packet */
     if(!$key || !$packet) return NULL; // Missing some data
 
     if(!$keyid) $keyid = substr($this->key->fingerprint, -16);
