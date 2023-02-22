@@ -12,7 +12,7 @@ require_once dirname(__FILE__).'/openpgp.php';
 @include_once dirname(__FILE__).'/openpgp_openssl_wrapper.php';
 
 class OpenPGP_Crypt_Symmetric {
-  public static function encrypt($passphrases_and_keys, $message, $symmetric_algorithm=9) {
+  public static function encrypt($passphrases_and_keys, $message, $symmetric_algorithm=9, $newFormat = true) {
     list($cipher, $key_bytes, $key_block_bytes) = self::getCipher($symmetric_algorithm);
     if(!$cipher) throw new Exception("Unsupported cipher");
     $prefix = Random::string($key_block_bytes);
@@ -23,8 +23,10 @@ class OpenPGP_Crypt_Symmetric {
 
     $to_encrypt = $prefix . $message->to_bytes();
     $mdc = new OpenPGP_ModificationDetectionCodePacket(hash('sha1', $to_encrypt . "\xD3\x14", true));
+    $mdc->newFormat = $newFormat;
     $to_encrypt .= $mdc->to_bytes();
     $encrypted = array(new OpenPGP_IntegrityProtectedDataPacket($cipher->encrypt($to_encrypt)));
+    $encrypted[0]->newFormat = $newFormat;
 
     if(!is_array($passphrases_and_keys) && !($passphrases_and_keys instanceof IteratorAggregate)) {
       $passphrases_and_keys = (array)$passphrases_and_keys;
@@ -37,12 +39,16 @@ class OpenPGP_Crypt_Symmetric {
         $rsa = $crypt_rsa->public_key()->withPadding(CRYPT_RSA_ENCRYPTION_PKCS1 | CRYPT_RSA_SIGNATURE_PKCS1);
         $esk = $rsa->encrypt(chr($symmetric_algorithm) . $key . pack('n', self::checksum($key)));
         $esk = pack('n', OpenPGP::bitlength($esk)) . $esk;
-        array_unshift($encrypted, new OpenPGP_AsymmetricSessionKeyPacket($pass->algorithm, $pass->fingerprint(), $esk));
+        $asymPacket = new OpenPGP_AsymmetricSessionKeyPacket($pass->algorithm, $pass->fingerprint(), $esk);
+        $asymPacket->newFormat = $newFormat;
+        array_unshift($encrypted, $asymPacket);
       } else if(is_string($pass)) {
         $s2k = new OpenPGP_S2K(Random::string(8));
         $cipher->setKey($s2k->make_key($pass, $key_bytes));
         $esk = $cipher->encrypt(chr($symmetric_algorithm) . $key);
-        array_unshift($encrypted, new OpenPGP_SymmetricSessionKeyPacket($s2k, $esk, $symmetric_algorithm));
+        $symPacket = new OpenPGP_SymmetricSessionKeyPacket($s2k, $esk, $symmetric_algorithm);
+        $symPacket->newFormat = $newFormat;
+        array_unshift($encrypted, $symPacket);
       }
     }
 

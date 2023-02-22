@@ -24,7 +24,7 @@ class OpenPGP_Crypt_RSA {
   // Construct a wrapper object from a key or a message packet
   function __construct($packet) {
     if(!is_object($packet)) $packet = OpenPGP_Message::parse($packet);
-    if($packet instanceof OpenPGP_PublicKeyPacket || $packet[0] instanceof OpenPGP_PublicKeyPacket) { // If it's a key (other keys are subclasses of this one)
+    if($packet instanceof OpenPGP_PublicKeyPacket || isset($packet[0]) && $packet[0] instanceof OpenPGP_PublicKeyPacket) { // If it's a key (other keys are subclasses of this one)
       $this->key = $packet;
     } else {
       $this->message = $packet;
@@ -158,7 +158,10 @@ class OpenPGP_Crypt_RSA {
       if($p instanceof OpenPGP_SignaturePacket) $sig = $p;
     }
     if(!$sig) {
-      $sig = new OpenPGP_SignaturePacket($packet, 'RSA', strtoupper($hash)); 
+      $sig = new OpenPGP_SignaturePacket($packet, 'RSA', strtoupper($hash));
+      if ($packet[0] instanceof OpenPGP_Packet) {
+        $sig->newFormat = $packet[0]->newFormat;
+      }
       $sig->signature_type = 0x13;
       $sig->hashed_subpackets[] = new OpenPGP_SignaturePacket_KeyFlagsPacket(array(0x01 | 0x02));
       $sig->hashed_subpackets[] = new OpenPGP_SignaturePacket_IssuerPacket($keyid);
