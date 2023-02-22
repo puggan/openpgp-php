@@ -27,10 +27,24 @@ $wkey = new OpenPGP_Crypt_RSA($nkey);
 $m = $wkey->sign_key_userid(array($nkey, $uid));
 
 // Serialize private key
-print $m->to_bytes();
+$bytes = $m->to_bytes();
+echo \OpenPGP::enarmor(
+    $bytes,
+    'PGP PRIVATE KEY BLOCK',
+    [
+        'Version' => 'OpenPgp-php v' . implode('.', \OpenPGP::VERSION)
+    ]
+);
 
 // Serialize public key message
 $pubm = clone($m);
 $pubm[0] = new OpenPGP_PublicKeyPacket($pubm[0]);
 
 $public_bytes = $pubm->to_bytes();
+echo \OpenPGP::enarmor(
+    $public_bytes,
+    'PGP PUBLIC KEY BLOCK',
+    [
+        'Version' => 'OpenPgp-php v' . implode('.', \OpenPGP::VERSION)
+    ]
+);
