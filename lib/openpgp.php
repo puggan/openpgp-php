@@ -1365,6 +1365,7 @@ class OpenPGP_PublicKeyPacket extends OpenPGP_Packet {
     parent::__construct();
 
     if($key instanceof OpenPGP_PublicKeyPacket) {
+      $this->newFormat = $key->newFormat;
       $this->algorithm = $key->algorithm;
       $this->key = array();
 
@@ -1379,6 +1380,9 @@ class OpenPGP_PublicKeyPacket extends OpenPGP_Packet {
       $this->version = $key->version;
       $this->v3_days_of_validity = $key->v3_days_of_validity;
     } else {
+      if ($key instanceof OpenPGP_Packet) {
+        $this->newFormat = $key->newFormat;
+      }
       $this->key = $key;
       if(is_string($this->algorithm = $algorithm)) {
         $this->algorithm = array_search($this->algorithm, self::$algorithms);
