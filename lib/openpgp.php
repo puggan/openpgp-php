@@ -423,6 +423,9 @@ class OpenPGP_Message implements IteratorAggregate, ArrayAccess {
  * @see http://tools.ietf.org/html/rfc4880#section-4.3
  */
 class OpenPGP_Packet {
+  /** @var bool Use the new header format introduced in rfc4880bis 4.2.2 */
+  public static $newHeaderFormat = true;
+
   public $tag, $size, $data;
 
   static function class_for($tag) {
@@ -539,8 +542,13 @@ class OpenPGP_Packet {
 
   function header_and_body() {
     $body = $this->body(); // Get body first, we will need it's length
-    $tag = chr($this->tag | 0xC0); // First two bits are 1 for new packet format
-    $size = chr(255).pack('N', strlen($body)); // Use 5-octet lengths
+    if (self::$newHeaderFormat || $this->tag > 0x0F) {
+        $tag = chr($this->tag | 0xC0); // First two bits are 1 for new packet format
+        $size = chr(255).pack('N', strlen($body)); // Use 5-octet lengths
+    } else {
+        $tag = chr($this->tag << 2 | 0x82); // 0x10tttt10, bit 7-6 is old format, bit 5-2 is tag, and bit 1-0 is length type
+        $size = pack('N', strlen($body)); // Use 5-octet lengths (1 octet header + 4 octet size)
+    }
     return array('header' => $tag.$size, 'body' => $body);
   }
 
