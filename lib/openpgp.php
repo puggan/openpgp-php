@@ -30,7 +30,7 @@ class OpenPGP {
     foreach ($headers as $key => $value) {
       $text .= $key . ': ' . (string)$value . "\n";
     }
-    $text .= "\n" . wordwrap(base64_encode($data), 76, "\n", true);
+    $text .= "\n" . wordwrap(base64_encode($data), 64, "\n", true);
     $text .= "\n".'=' . base64_encode(substr(pack('N', self::crc24($data)), 1)) . "\n";
     $text .= self::footer($marker) . "\n";
     return $text;
