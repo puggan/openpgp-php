@@ -542,12 +542,27 @@ class OpenPGP_Packet {
 
   function header_and_body() {
     $body = $this->body(); // Get body first, we will need it's length
+    $bytes = strlen($body);
     if (self::$newHeaderFormat || $this->tag > 0x0F) {
         $tag = chr($this->tag | 0xC0); // First two bits are 1 for new packet format
-        $size = chr(255).pack('N', strlen($body)); // Use 5-octet lengths
+        if ($bytes < 0xC0) {
+            $size = pack('C', $bytes); // Use 1-octet lengths, 0-191
+        } elseif ($bytes < 0x20C0) {
+            $size = pack('n', $bytes - 0xC0 + 0xC000); // Use 2-octet lengths, 192-8383
+        } else {
+            $size = chr(255) . pack('N', $bytes); // Use 5-octet lengths
+        }
     } else {
-        $tag = chr($this->tag << 2 | 0x82); // 0x10tttt10, bit 7-6 is old format, bit 5-2 is tag, and bit 1-0 is length type
-        $size = pack('N', strlen($body)); // Use 5-octet lengths (1 octet header + 4 octet size)
+        if ($bytes < 0x100) {
+            $tag = chr($this->tag << 2 | 0x80);
+            $size = pack('C', $bytes); // Use 1-octet lengths
+        } elseif ($bytes < 0x10000) {
+            $tag = chr($this->tag << 2 | 0x81);
+            $size = pack('n', $bytes); // Use 2-octet lengths, see 4.2.2
+        } else {
+            $tag = chr($this->tag << 2 | 0x82); // 0x10tttt10, bit 7-6 is old format, bit 5-2 is tag, and bit 1-0 is length type
+            $size = pack('N', $bytes); // Use 5-octet lengths (1 octet header + 4 octet size)
+        }
     }
     return array('header' => $tag.$size, 'body' => $body);
   }
